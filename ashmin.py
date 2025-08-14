@@ -329,7 +329,7 @@ def show_module(module):
                 f"{i+2}.", tool2[0]
             ))
         elif tool1:
-            print(f"{Fore.YELLOW}│ {i+1}. {Fore.CYAN}{tool1[0]}{' '*(col_width-len(tool1[0])} │ {' '*(col_width+4)} │")
+            print(f"{Fore.YELLOW}│ {i+1}. {Fore.CYAN}{tool1[0]}{' ' * (col_width - len(tool1[0]))} │ {' ' * (col_width + 4)} │")
     
     print(Fore.YELLOW + "└" + "─" * 50 + "┘")
     
