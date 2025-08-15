@@ -5,3 +5,8 @@
 [2025-08-15 00:50:28] 0f8dd186cd73 | jss | phishing | Zphisher
 [2025-08-15 00:52:07] 6c66776f99a3 |  | creds | Hydra
 [2025-08-15 00:52:57] b0874443f426 | sff | creds | Hydra
+[2025-08-15 03:56:42] bf7a3d083559 | g | creds | Hydra
+[2025-08-15 03:57:14] 4de1324ddff3 | j | social_attack | SocialFish Pro
+[2025-08-15 04:01:07] 70ba0f132c3d | n | social_attack | SocialFish Pro
+[2025-08-15 04:14:48] e97b3401ac99 | j | social_attack | SocialFish Pro
+[2025-08-15 04:15:54] 04e93855269d | j | social_attack | SocialFish Pro

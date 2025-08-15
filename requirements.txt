@@ -1,2 +1,6 @@
 Flask
 requests
+requests
+flask
+twilio
+colorama
