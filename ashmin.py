@@ -237,7 +237,7 @@ def socialfish_attack():
         email_config['smtp_server'] = input(f"{Fore.BLUE}│   SMTP Server: ")
         email_config['smtp_port'] = input(f"{Fore.BLUE}│   SMTP Port [587]: ") or "587"
         email_config['email'] = input(f"{Fore.BLUE}│   Email Address: ")
-        email_config['password'] = getpass(f"{Fore.BLUE}│   Email Password: ")
+        email_config['password'] = getpass.getpass(f"{Fore.BLUE}│   Email Password: ")
         email_config['target_list'] = input(f"{Fore.BLUE}│   Target emails (comma separated): ").split(',')
         
         # Load email template
