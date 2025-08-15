@@ -1,0 +1,3 @@
+[2025-08-15 00:14:11] 394e56df4b69 | 1267109a | social_attack | FakeFollower
+[2025-08-15 00:16:58] 7da6e4eb32b2 | gjh | phishing | CloneSite
+[2025-08-15 00:17:39] b3a2e7e0bdac | j | phishing | PhishMaster
