@@ -1,0 +1,8 @@
+SocialCyber Attack Session
+Session ID: b6ecec065229
+Start Time: 2025-08-15 02:38:11
+Target: facebook
+Service: social_attack
+Method: SocialFish Pro
+--------------------------------------------------------------------------------
+Error: 'module' object is not callable. Did you mean: 'getpass.getpass(...)'?
