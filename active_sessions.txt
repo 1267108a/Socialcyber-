@@ -1,3 +1,7 @@
 [2025-08-15 00:14:11] 394e56df4b69 | 1267109a | social_attack | FakeFollower
 [2025-08-15 00:16:58] 7da6e4eb32b2 | gjh | phishing | CloneSite
 [2025-08-15 00:17:39] b3a2e7e0bdac | j | phishing | PhishMaster
+[2025-08-15 00:49:44] 794b6818ec87 | ndjd | social_attack | SocialFish
+[2025-08-15 00:50:28] 0f8dd186cd73 | jss | phishing | Zphisher
+[2025-08-15 00:52:07] 6c66776f99a3 |  | creds | Hydra
+[2025-08-15 00:52:57] b0874443f426 | sff | creds | Hydra

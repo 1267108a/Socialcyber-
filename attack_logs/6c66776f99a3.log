@@ -1,0 +1,10 @@
+SocialCyber Attack Session
+Session ID: 6c66776f99a3
+Start Time: 2025-08-15 00:52:07
+Target: 
+Service: creds
+Method: Hydra
+--------------------------------------------------------------------------------
+Command: hydra -L ff -P ddv  as
+--------------------------------------------------------------------------------
+/bin/sh: 1: hydra: not found
